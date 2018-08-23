@@ -74,7 +74,7 @@ class Servers(socketserver.StreamRequestHandler):
             #{"sign":"test3","time":123456,"data":{"a":123}}
             # try:
             if True:
-                print(type(data))
+                # print(type(data))
                 dicdata = json.loads(data)
                 if dicdata['type'] == 'ping':
                     self.request.send('{"type":"pong","erro":"0"}'.encode('utf-8'))
