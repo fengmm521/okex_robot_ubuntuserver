@@ -1,0 +1,9 @@
+# 生成rsa密钥
+$ openssl genrsa -des3 -out server.key 2048
+# 去除掉密钥文件保护密码
+$ openssl rsa -in server.key -out server.key
+# 生成ca对应的csr文件
+$ openssl req -new -key server.key -out server.csr
+# 自签名
+$ openssl x509 -req -days 2048 -in server.csr -signkey server.key -out server.crt
+$ cat server.crt server.key > server.pem

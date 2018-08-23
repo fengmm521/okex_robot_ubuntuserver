@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <meta http-equiv='Content-Type' content='text/html;charset=utf-8' />
+        <title>帐户监控</title>
+        <style type='text/css'>
+        #login {
+                text-align:center;
+                padding:5px;
+        }
+        .must {color:red;}
+        .word {text-align:right;margin-right:30px;}
+        #regist {
+                text-align:center;
+                padding:5px;
+        }
+        #ptip,#mtip {color:red;font-size:10px;}
+        #header {
+            background-color:black;
+            color:white;
+            text-align:center;
+            padding:5px;
+        }
+        </style>
+        <link rel="stylesheet" href="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css">  
+        <script src="http://cdn.static.runoob.com/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="bin/jsencrypt.min.js"></script>
+        <script>
+        function verpwd()
+        {
+                var pwd=document.getElementById('pwd').value;
+                if(pwd==''||pwd==null)
+                {
+                        document.getElementById('ptip').innerHTML='请填写密码';
+                        // document.getElementById('pwd').focus();
+                        return false;
+                }
+                else
+                {
+                        document.getElementById('ptip').innerHTML='';
+                        return true;
+                }
+        }
+        function vermail()
+        {
+                var mail=document.getElementById('mail').value;
+                if(mail==''||mail==null||mail.indexOf('@')==0||mail.indexOf('.')-mail.indexOf('@')<=1)  //邮箱验证不完善
+                {
+                        document.getElementById('mtip').innerHTML='请填写有效的邮箱';
+                        // document.getElementById('mail').focus();
+                        return false;
+                }
+                else
+                {
+                        document.getElementById('mtip').innerHTML='';
+                        return true;
+                }
+        }
+
+        function check()
+        {
+                if(vermail() && verpwd()==true)
+                        return true;
+                else 
+                {
+                        alert('登陆失败，请输入邮箱帐号和密码！')
+                        return false;
+                }
+        }
+
+        function doLogin(){
+            if (check())
+            {
+                var encrypt = new JSEncrypt();
+                encrypt.setPublicKey($('#pubkey').val());
+
+                var mail=document.getElementById('mail').value;
+                var enemail = encrypt.encrypt(mail);
+
+                var pwd=document.getElementById('pwd').value;
+                var enpwd=encrypt.encrypt(pwd);
+
+                document.getElementById('mail').value = enemail;
+                document.getElementById('pwd').value = enpwd;
+                loginForm.submit();
+                document.getElementById('mail').value = mail;
+            }
+        }
+
+        function changeURL(){
+            // var url = document.getElementById('url').value;
+            var url = 'index.html'
+            window.history.pushState({},0,'http://'+window.location.host+'/'+url);      
+        }
+        window.onload = function(){
+        
+            changeURL() 
+        }
+        </script>
+</head>
+<body>
+        <div id="header">
+        <h1>做市机器人帐户监控系统</h1>
+        <h5>--淘宝:<a href="https://fengmm521.taobao.com" target="black">https://fengmm521.taobao.com</a></h5>
+        </div>
+        <textarea id="pubkey" rows="15" cols="65" style="display:none">-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDAOWvcoFpiz1pOqrO0RdUHZz+v
+xUS5sNdRnNmlRCl8dZradT0l4Pz2zgMtglPV/nAxp8uSZz3WbXCvVrdF4EXLsDWI
+AGJIcz+wg4aEOUNHRTeNWyh7LwVHhGt9sEHDle//3WNOgptrxDc01Wt9VAz4q7ZX
+10EyJzS3PGCwJzDQ2QIDAQAB
+-----END PUBLIC KEY-----</textarea>
+        <p> </p>
+        <div id='login'>
+                <form action='./login' id="loginForm" method='post'>
+                <table align="center">                
+                        <tr>
+                                <td><span class='must'>*</span>帐号邮箱：</span></td>
+                                <td><input type='text' name='mail' id='mail' onblur='vermail()' /></td>
+                                <td style='width:80px;'><span id='mtip'></span></td>
+                        </tr>
+                        <tr>
+                                <td><span class='must'>*</span>帐号密码：</span></td>
+                                <td><input type='password' name='pwd' id='pwd' onblur='verpwd()' /></td>
+                                <td style='width:80px;'><span id='ptip'></span></td>
+                        </tr>
+                        <tr>
+                                <td> <p></p> </td>
+                                <td></td>
+                                <td> </td>
+                        </tr>
+                        <tr>
+                                <td colspan='3' style='text-align:center;'><input class="submit" type='submit' value='登 录' onclick="doLogin()"/></td>
+                        </tr>
+                </table>
+                </form>
+                
+                <!-- <iframe name='hidden_frame' id="hidden_frame" style='display: none'></iframe> -->
+        </div>
+        <p> </p>
+        <div id='regist'>
+                <form action='./reg.html' onsubmit="" method='get'>
+                <table align="center">                
+                        <tr>
+                            <td colspan='1' style='text-align:center;'><input type='submit' value='注册' /></td>
+                        </tr>
+                </table>
+                </form>
+        </div>
+        <p> </p>
+        <p align="center" style="color:#228F00;" > 登陆后可查看帐户状态 </p>
+
+
+</body>
+</html>

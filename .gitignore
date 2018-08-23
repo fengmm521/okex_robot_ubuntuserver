@@ -1,0 +1,12 @@
+
+market_XBTU18_okex/market/bitmex_xbt/bitmexdeep.txt
+market_XBTU18_okex/market/bitmex_xbt/datapsid.txt
+market_XBTU18_okex/market/bitmex_xbt/log.txt
+market_XBTU18_okex/market/bitmex_xbt/testtrade.txt
+market_XBTU18_okex/market/okex/log.txt
+market_XBTU18_okex/market/okex/okexdeep.txt
+market_XBTU18_okex/markettest/bitmex/deepdata.txt
+market_XBTU18_okex/markettest/bitmex/deepdatatest.txt
+market_XBTU18_okex/markettest/okex/oktradelog.txt
+market_XBTU18_okex/markettest/okex/testdata2.txt
+*.pyc
