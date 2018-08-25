@@ -20,4 +20,9 @@ echo $DATE
 
 cd $basepath
 
-python3 bitmexTradeServer.py
+# python3 bitmexTradeServer.py
+LOG=`nohup python3 bitmexTradeServer.py > tlog.txt 2>&1 & echo $!`
+# LOG="12345"
+echo $LOG
+OUTSTR=$DATE"\n"$LOG
+echo $OUTSTR > tpsid.txt

@@ -19,4 +19,9 @@ DATE=`date "+%Y-%m-%d %H:%M:%S"`
 echo $DATE
 
 cd $basepath
-python3 okexTradeServer.py
+# python3 okexTradeServer.py
+LOG=`nohup python3 okexTradeServer.py > tlog.txt 2>&1 & echo $!`
+# LOG="12345"
+echo $LOG
+OUTSTR=$DATE"\n"$LOG
+echo $OUTSTR > tpsid.txt

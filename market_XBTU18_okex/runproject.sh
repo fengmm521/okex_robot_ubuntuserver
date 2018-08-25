@@ -20,34 +20,65 @@ echo $DATE
 
 cd $basepath
 
-#打开bitmex合约工具
-osascript -e 'tell app "Terminal"
-    do script "cd ~/Documents/github/okex_robot/market/bitmex;sh startDataServer.sh"
-end tell'
+cd market/bitmex_xbt
 
+sh startDataServer.sh
 
-sleep 1
-
-osascript -e 'tell app "Terminal"
-    do script "cd ~/Documents/github/okex_robot/market/bitmex;sh startTradeServer.sh"
-end tell'
-
-
-sleep 1
-
-
-# 打开okex季度合约工具
-osascript -e 'tell app "Terminal"
-    do script "cd ~/Documents/github/okex_robot/market/okex;sh startDataServer.sh"
-end tell'
-
-sleep 1
-
-osascript -e 'tell app "Terminal"
-    do script "cd ~/Documents/github/okex_robot/market/okex;sh startTradeServer.sh"
-end tell'
+sh startTradeServer.sh
 
 sleep 5
 
+sh runWatchdog.sh
+
+cd $basepath
+
+cd market/okex
+
+sh startDataServer.sh
+
+sh startTradeServer.sh
+
+sleep 5
+
+sh runWatchdog.sh
+
+
+cd $basepath
+
+LOG=`nohup python3 mainClient.py > mlog.txt 2>&1 & echo $!`
+# LOG="12345"
+echo $LOG
+OUTSTR=$DATE"\n"$LOG
+echo $OUTSTR > mpsid.txt
+
+# #打开bitmex合约工具
+# osascript -e 'tell app "Terminal"
+#     do script "cd ~/Documents/github/okex_robot/market/bitmex;sh startDataServer.sh"
+# end tell'
+
+
+# sleep 1
+
+# osascript -e 'tell app "Terminal"
+#     do script "cd ~/Documents/github/okex_robot/market/bitmex;sh startTradeServer.sh"
+# end tell'
+
+
+# sleep 1
+
+
+# # 打开okex季度合约工具
+# osascript -e 'tell app "Terminal"
+#     do script "cd ~/Documents/github/okex_robot/market/okex;sh startDataServer.sh"
+# end tell'
+
+# sleep 1
+
+# osascript -e 'tell app "Terminal"
+#     do script "cd ~/Documents/github/okex_robot/market/okex;sh startTradeServer.sh"
+# end tell'
+
+# sleep 5
+
 #启动管理客户端
-python mainClient.py
+# python mainClient.py

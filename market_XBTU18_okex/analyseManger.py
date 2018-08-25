@@ -25,6 +25,8 @@ import threading
 import time
 import json
 
+import base64
+
 from magetool import pathtool
 from magetool import timetool
 sys.path.append('util')
@@ -239,8 +241,111 @@ class TradeTool(object):
         self.priceWinlog = []
         self.maxStrlen = 0
 
+
+        self.clientSoket = None
+
         self.initSocket()
 
+
+    def setClientSocket(self,csocket):
+        self.clientSoket = csocket
+
+    def sendMsgToClient(self,msg):
+        
+        if self.clientSoket:
+            def sayTradeRun(tmsg):
+                try:
+                    datdic = {}
+                    if type(tmsg) == str:
+                        msgtmp = base64.b64encode(tmsg.encode())
+                        datdic = {'data':msgtmp.decode(),'state':self.tradeState,'isbase64data':True}
+                    else:
+                        datdic = {'data':tmsg,'state':self.tradeState,'isbase64data':False}
+                    sendstr = json.dumps(datdic)
+                    self.clientSoket.send(sendstr.encode())
+                except Exception as e:
+                    print('client close or erro')
+                    self.clientSoket = None
+            tmsg = msg
+            sTradethr = threading.Thread(target=sayTradeRun,args=(tmsg,))
+            sTradethr.setDaemon(True)
+            sTradethr.start()
+            
+            
+
+    def runClientCMD(self,cmdstr):
+        data = cmdstr
+        tradetool = self
+        if data == 'openbo':
+            priceOBBuySub = tradetool.okexDatas[0][0] - tradetool.bitmexDatas[0][0] + 10
+            tradetool.openBO(subpurce = priceOBBuySub)
+        elif data == 'openob':
+            priceOBSellSub = tradetool.okexDatas[1][0] - tradetool.bitmexDatas[1][0] - 10
+            tradetool.openOB(subpurce = priceOBSellSub)
+        elif data == 'closebo':
+            priceOBSellSub = tradetool.okexDatas[1][0] - tradetool.bitmexDatas[1][0] - 10
+            tradetool.closeBO(subpurce = priceOBSellSub)
+        elif data == 'closeob':
+            priceOBBuySub = tradetool.okexDatas[0][0] - tradetool.bitmexDatas[0][0] + 10
+            tradetool.closeOB(subpurce = priceOBBuySub)
+        elif data == 'okexol':
+            msg = {'type':'ol','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':'sssss'}
+            tradetool.sendMsgToOkexTrade('ol', msg)
+        elif data == 'okexos':
+            msg = {'type':'os','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':'sssss'}
+            tradetool.sendMsgToOkexTrade('os', msg)
+        elif data == 'okexcl':
+            msg = {'type':'cl','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':'sssss'}
+            tradetool.sendMsgToOkexTrade('cl', msg)
+        elif data == 'okexcs':
+            msg = {'type':'cs','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':'sssss'}
+            tradetool.sendMsgToOkexTrade('cs', msg)
+        elif data == 'bitmexol':
+            CIDtmp = 'sssss' + str(time.time())
+            msg = {'type':'ol','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':CIDtmp}
+            tradetool.sendMsgToBitmexTrade('ol', msg)
+        elif data == 'bitmexos':
+            CIDtmp = 'sssss' + str(time.time())
+            msg = {'type':'os','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':CIDtmp}
+            tradetool.sendMsgToBitmexTrade('os', msg)
+        elif data == 'bitmexcl':
+            CIDtmp = 'sssss' + str(time.time())
+            msg = {'type':'cl','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':CIDtmp}
+            tradetool.sendMsgToBitmexTrade('cl', msg)
+        elif data == 'bitmexcs':
+            CIDtmp = 'sssss' + str(time.time())
+            msg = {'type':'cs','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':CIDtmp}
+            tradetool.sendMsgToBitmexTrade('cs', msg)
+        elif data == 'getalloride':
+            tradetool.getAllTrade()
+        elif data == 'cancelokex' or data == 'cokex':
+            tradetool.cancelAllTrade('okex')
+        elif data == 'cancelbitmex' or data == 'cbitmex':
+            tradetool.cancelAllTrade('bitmex')
+        elif data == 'getBitmexFunding':
+            tradetool.getBitmexFunding()
+        elif data == 'account':
+            tradetool.getAccount()
+        elif data == 'opentest' or data == 'ot':
+            tradetool.setTradeTest(True)
+        elif data == 'closetest' or data == 'ct':
+            tradetool.setTradeTest(False)
+        elif data == 'openlog' or data == 'olog':
+            tradetool.setLogShow(True)
+        elif data == 'closelog' or data == 'clog':
+            tradetool.setLogShow(False)
+        elif data == 'clear':
+            tradetool.clearCache()
+        elif data == 'print':
+            tradetool.printDatas()
+        elif data == 'start':
+            tradetool.startDaly = 0
+        elif data == 'stop':
+            tradetool.startDaly = -1
+        elif data == 't':
+            print(tradetool.okexDatas[1][0])
+        else:
+            print(data)
     def setLogShow(self,isShowLog):
 
         if isShowLog:
@@ -313,6 +418,30 @@ class TradeTool(object):
                         datadic = json.loads(data.decode())
                     except Exception as e:
                         isDataOK = False
+                        try:
+                            if len(data) > 1:  #一次接收了多个json数据
+                                datastr = data.decode()
+                                if datastr.find('}{') != -1:
+                                    datas = datastr.split('}{')
+                                    if datas:
+                                        for n in range(len(datas)):
+                                            d = datas[n]
+                                            if n == 0:
+                                                dtmp = d + '}'
+                                                dictmp = json.loads(dtmp)
+                                                self.onOkexData(dictmp)
+                                            elif n == len(datas) - 1:
+                                                dtmp = '{' + d
+                                                dictmp = json.loads(dtmp)
+                                                self.onOkexData(dictmp)
+                                            else:
+                                                dtmp = '{' + d + '}'
+                                                dictmp = json.loads(dtmp)
+                                                self.onOkexData(dictmp)
+                                    continue
+                        except Exception as e2:
+                            print(e2)
+
                     if isDataOK:
                         self.onOkexData(datadic)
                     else:
@@ -349,6 +478,30 @@ class TradeTool(object):
                         isOKBitmexData = True
                     except Exception as e:
                         print(data)
+                        try:
+                            if len(data) > 1:  #一次接收了多个json数据
+                                datastr = data.decode()
+                                if datastr.find('}{') != -1:
+                                    datas = datastr.split('}{')
+                                    if datas:
+                                        for n in range(len(datas)):
+                                            d = datas[n]
+                                            if n == 0:
+                                                dtmp = d + '}'
+                                                dictmp = json.loads(dtmp)
+                                                self.onBitmexData(dictmp)
+                                            elif n == len(datas) - 1:
+                                                dtmp = '{' + d
+                                                dictmp = json.loads(dtmp)
+                                                self.onBitmexData(dictmp)
+                                            else:
+                                                dtmp = '{' + d + '}'
+                                                dictmp = json.loads(dtmp)
+                                                self.onBitmexData(dictmp)
+                                    continue
+                        except Exception as e2:
+                            print(e2)
+                        
                     if isOKBitmexData:
                         self.onBitmexData(datadic)
                     else:
@@ -827,6 +980,7 @@ class TradeTool(object):
             if isStop:
                 showlogtmp = ' | '.join(self.priceWinlog)
                 showlogtmp = '\r' + showlogtmp
+                self.sendMsgToClient(showlogtmp[1:])
                 sys.stdout.writelines(showlogtmp)
                 sys.stdout.flush()
                 # print('ddd')
@@ -838,6 +992,8 @@ class TradeTool(object):
                 c = abs((lastOBsub+2)/stepprice) - len(self.obsubs) - self.baseOB
                 self.tradecount = len(self.obsubs) + self.baseOB + 1
                 tmpprice = -(self.tradecount)*stepprice
+                psmallprice = tmpprice + self.basePrice
+                pbigprice = tmpprice + 2*stepprice + self.basePrice
                 if self.showLogCount == 0:
                     tmpstr = 'last<0,sub:%.2f,%d,%.3f,%d,m:%.2f,s:%.2f,%.2f'%(self.lastSub['ob']['subOB'],len(self.obsubs),c,self.baseOB,tmpprice + 2*stepprice + self.basePrice,tmpprice + self.basePrice,stepprice)
                     # tmpstr = '\r' + tmpstr
@@ -846,16 +1002,16 @@ class TradeTool(object):
                         tmpstr = '\r' + ' | '.join(self.priceWinlog)
                     else:
                         tmpstr = '\r' + tmpstr
-                    
+                    self.sendMsgToClient(tmpstr[1:])
                     sys.stdout.writelines(tmpstr)
                     # print('\r',str(10-i).ljust(10),end='') #python 3使用的方法
                     # print('\r',tmpstr.ljust(100))
                     sys.stdout.flush()
                     self.priceWinlog = []
-                if c > 1.0:
-                    opencount = math.floor(c)
+                if self.lastSub['ob']['subOB'] < psmallprice:
+                    # opencount = math.floor(c)
                     self.openOB(priceOBSellSub)
-                elif c < -1:
+                elif self.lastSub['ob']['subOB'] > pbigprice:
                     self.closeOB(priceOBBuySub)
             else:
                 print('other.1..')
@@ -863,13 +1019,14 @@ class TradeTool(object):
         elif lastOBsub > 0:
             maxprice = self.okexDatas[1][0]
             stepprice = maxprice * self.stepPercent
-            if self.isShowLog:
+            if self.isShowLog and isStop:
                 # print('stepprice=%.2f,%d'%(stepprice,isStop))
                 tmplog2 = 'stepprice=%.2f,%d'%(stepprice,isStop)
                 self.priceWinlog.insert(-2,tmplog2)
             if isStop:
                 showlogtmp = ' | '.join(self.priceWinlog)
                 showlogtmp = '\r' + showlogtmp
+                self.sendMsgToClient(showlogtmp[1:])
                 sys.stdout.writelines(showlogtmp)
                 sys.stdout.flush()
                 # print('ddd')
@@ -882,6 +1039,8 @@ class TradeTool(object):
                 c =  abs((lastOBsub-2)/stepprice) - len(self.bosubs) - self.baseBO
                 self.tradecount = len(self.bosubs) + self.baseBO + 1
                 tmpprice = (self.tradecount)*stepprice
+                psmallprice = tmpprice - 2*stepprice + self.basePrice
+                pbigprice = tmpprice + self.basePrice
                 if self.showLogCount == 0:
                     tmpstr = 'last>0,sub:%.2f,%d,%.3f,%d,m:%.2f,s:%.2f,%.2f'%(self.lastSub['ob']['subOB'],len(self.bosubs),c,self.baseOB,tmpprice + self.basePrice,tmpprice - 2*stepprice + self.basePrice,stepprice)
                     # print(tmpstr)
@@ -890,17 +1049,22 @@ class TradeTool(object):
                         tmpstr = '\r' + ' | '.join(self.priceWinlog)
                     else:
                         tmpstr = '\r' + tmpstr
-                    
+                    self.sendMsgToClient(tmpstr[1:])
                     sys.stdout.writelines(tmpstr)
                     # print('\r',str(10-i).ljust(10),end='') #python 3使用的方法
                     # print('\r',tmpstr.ljust(100))
                     sys.stdout.flush()
                     self.priceWinlog = []
-                if c > 1.0:
-                    opencount = math.floor(c)
+                if self.lastSub['ob']['subOB'] > pbigprice:
+                    # opencount = math.floor(c)
                     self.openBO(priceOBBuySub)
-                elif c < -1:
+                elif self.lastSub['ob']['subOB'] < psmallprice:
                     self.closeBO(priceOBSellSub)
+                # if c < 1.0:
+                #     opencount = math.floor(c)
+                #     self.openBO(priceOBBuySub)
+                # elif c < -1:
+                #     self.closeBO(priceOBSellSub)
             else:
                 print('other.2..')
                 
@@ -1449,7 +1613,7 @@ class TradeTool(object):
             print(datadic)
             if 'ordStatus' in datadic['data'][0] and datadic['data'][0]['ordStatus'] == 'Canceled':#定单已取消
                 self.onBitmexOrderCancelOK(datadic['data'][0])
-            elif 'ordStatus' not in datadic['data'][0] and datadic['data'][0]['workingIndicator']:
+            elif 'ordStatus' not in datadic['data'][0] and ('workingIndicator' in datadic['data'][0]) and datadic['data'][0]['workingIndicator']:
                 self.onBitmexOrderOnline(datadic['data'][0]) #定单成功委托
             elif datadic['action'] == 'insert':#新增定单
                 self.onBitmexOrderStart(datadic['data'][0])
@@ -1512,6 +1676,9 @@ class TradeTool(object):
             print(data)
     #当bitmex下单完全成交
     def onBitmexTradeOK(self,data):
+        print(data)
+        print(self.bCIDData)
+        print(self.okexTradeMsgs)
         if data['clOrdID'] in self.bCIDData:
             self.bCIDData[data['clOrdID']]['state'] = 2
             ptype = self.okexTradeMsgs.pop(0)
@@ -1520,13 +1687,14 @@ class TradeTool(object):
                 ocid = ptype['cid']
                 isSendOK = False
                 self.tradecount = 0
-                smsg = 'bitmex完全成交'.encode()
-                sayMsg(smsg)
+                print('bitmex order Filled')
+                # smsg = 'bitmex完全成交'.encode()
+                # sayMsg(smsg)
                 msg = {}
                 if ptype['type'] == 'ol':
                     msg = {'type':'ol','amount':ptype['amount'],'price':self.okexDatas[1][0]+5,'islimit':1,'cid':ocid}
                     self.oCIDData[ocid] = {'msg':msg,'state':0,'cid':ocid}
-                    print('okex下单')
+                    print('okex open order')
                     self.tradeState = 211 #211.okex开多正在下单
                     isSendOK = self.sendMsgToOkexTrade('ol', msg)
                     while not isSendOK:
@@ -1565,9 +1733,9 @@ class TradeTool(object):
                         isSendOK = self.sendMsgToOkexTrade('cs', msg)
                     self.tradeState = 242 #242.okex平空已发送，等成交
                 if isSendOK:
-                    print('okex下单成功已发送'.encode())
-                    smsg = 'okex下单'
-                    sayMsg(smsg)
+                    print('okex open order sended')
+                    # smsg = 'okex下单'
+                    # sayMsg(smsg)
                     self.lastOkexTradeTime = int(time.time())
                     if self.baseOB > 0 and self.isCloseBaseOB:
                         self.isCloseBaseOB = False
@@ -1583,11 +1751,12 @@ class TradeTool(object):
                             self.baseBO = 0
                 else:
                     print(msg)
-                    print('okex下单发送网络错误'.encode())
-                    smsg = 'okex下单出错'.encode()
-                    sayMsg(smsg)
+                    print('okex open order erro')
+                    # smsg = 'okex下单出错'.encode()
+                    # sayMsg(smsg)
         else:
-            print("非交易对下单，完全成交的定单ID为bitmex下单服务器自动生成,".encode())
+            # print("非交易对下单，完全成交的定单ID为bitmex下单服务器自动生成,".encode())
+            print("ordercid is trade server create cid")
             print(data)
 
     
@@ -1620,9 +1789,9 @@ class TradeTool(object):
             self.tradeState = 0 #0.没有下单，可下新单
             smsg = 'bitmex撤单成功'
             sayMsg(smsg)
-            self.lastBitmexTradeTime = int(time.time())     #定单取消时，等3秒再开始下一个交易
+            self.lastBitmexTradeTime = int(time.time()) + 27     #定单取消时，等27+3=30秒再开始下一个交易
         else:
-            print("非交易对下单，已成功取消的定单ID为bitmex下单服务器自动生成,".encode())
+            # print("非交易对下单，已成功取消的定单ID为bitmex下单服务器自动生成,".encode())
             print(self.bCIDData)
             print(data)
 
@@ -1673,7 +1842,7 @@ class TradeTool(object):
         elif tmpobj['type'] == 'cboa' and tmpobj['sub']:
             self.bosubs = list(tmpobj['sub'])
         self.tradeState = 0 #0.没有下单，可下新单
-        self.lastBitmexTradeTime = int(time.time()) + 2   #等5秒后才会重新下单，因为默认是等3秒，这里加2秒记等3秒后再会重新开始下单
+        self.lastBitmexTradeTime = int(time.time()) + 27   #等5秒后才会重新下单，因为默认是等27+3=30秒，这里加12秒记等15秒后再会重新开始下单
         smsg = 'bitmex下单错误'.encode()
         sayMsg(smsg)
 

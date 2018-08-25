@@ -21,9 +21,9 @@ echo $DATE
 cd $basepath
 
 # python okexDataServer.py
-LOG=`nohup python3 okexDataServer.py > log.txt 2>&1 & echo $!`
+LOG=`nohup python3 okexDataServer.py > dlog.txt 2>&1 & echo $!`
 # LOG="12345"
 echo $LOG
 OUTSTR=$DATE"\n"$LOG
-echo $OUTSTR > datapsid.txt
+echo $OUTSTR > dpsid.txt
 

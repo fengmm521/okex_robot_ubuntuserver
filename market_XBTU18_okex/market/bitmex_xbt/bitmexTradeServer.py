@@ -72,8 +72,8 @@ class Servers(socketserver.StreamRequestHandler):
             #数据格式:{"type":消息类型,"sign":sha256的data转为字符串的签名,"time":时间戳用来确定发送时间和验证签名,"data":{消息正文内容}}
             #目前数据只验证签名，未作加密处理，后期加入数据加密后传送
             #{"sign":"test3","time":123456,"data":{"a":123}}
-            # try:
-            if True:
+            try:
+            # if True:
                 # print(type(data))
                 dicdata = json.loads(data)
                 if dicdata['type'] == 'ping':
@@ -86,13 +86,13 @@ class Servers(socketserver.StreamRequestHandler):
                 else:
                     print(data)
                     self.request.send('{"erro":"signErro"}'.encode('utf-8'))
-            # except Exception as e:
-            #     print('trade data erro:')
-            #     print(e)
-            #     print(data)
-            #     erromsg = {"servererro":str(e),"data":dicdata}
-            #     backmsg = json.dumps(erromsg)
-            #     self.request.send(backmsg.encode())
+            except Exception as e:
+                print('trade data erro:')
+                print(e)
+                print(data)
+                erromsg = {"servererro":str(e),"data":dicdata}
+                backmsg = json.dumps(erromsg)
+                self.request.send(backmsg.encode())
                 
             
 

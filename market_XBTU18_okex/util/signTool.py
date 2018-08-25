@@ -13,7 +13,7 @@ import json
 import os
 import hashlib
 import json
-
+import time
 
     
 
@@ -56,21 +56,39 @@ def isSignOK(msgdic,secretkey):
     csgin = msgdic['sign']
     if csgin == 'test':
         return True
-    print(type(data))
-    print(data)
+    # print(type(data))
+    # print(data)
     sgin = hashlib.sha256(data.encode('utf-8')).hexdigest().upper()
-    print(sgin)
+    # print(sgin)
     
     if csgin == sgin:
         return True
     else:
         return False
 
-def signMsg(msgdic,ptime,secretkey):
+
+def isClientSignOK(msgdic,skey):
+
+    ptime = int(time.time())
+    if abs(msgdic['time'] - ptime) > 30:
+        print('sign time mast 30 secend')
+        return False
+    dictstr = byteify(msgdic['data'])
+    data = str(dictstr) + str(msgdic['time'])  + str(skey)
+    csgin = msgdic['sign']
+    sgin = hashlib.sha256(data.encode('utf-8')).hexdigest().upper()
+    # print(sgin)
+    
+    if csgin == sgin:
+        return True
+    else:
+        return False
+
+def signClientMsg(msgdic,ptime,secretkey):
     if type(msgdic) == str:
         data = msgdic + str(ptime)  + str(secretkey)
-        print(type(data))
-        print(data)
+        # print(type(data))
+        # print(data)
         sgin = hashlib.sha256(data.encode()).hexdigest().upper()
         return sgin
     if type(msgdic) == bytes:
@@ -84,8 +102,33 @@ def signMsg(msgdic,ptime,secretkey):
         dictstr = byteify(msgdic)
         data = str(dictstr)  + str(ptime)  + str(secretkey) 
         # data = json.dumps(msgdic)  + str(ptime)  + str(secretkey)
-        print(type(data))
-        print(data)
+        # print(type(data))
+        # print(data)
+
+        sgin = hashlib.sha256(data.encode()).hexdigest().upper()
+        return sgin
+
+
+def signMsg(msgdic,ptime,secretkey):
+    if type(msgdic) == str:
+        data = msgdic + str(ptime)  + str(secretkey)
+        # print(type(data))
+        # print(data)
+        sgin = hashlib.sha256(data.encode()).hexdigest().upper()
+        return sgin
+    if type(msgdic) == bytes:
+        data = msgdic.decode('utf-8') + str(ptime)  + str(secretkey)
+        sgin = hashlib.sha256(data.encode()).hexdigest().upper()
+        return sgin
+    else:
+        # utf8dict = byteify(msgdic)
+        # dicttmp= sorted(msgdic.items(), key=lambda d:d[0], reverse = True) 
+        # data = str(dicttmp)  + str(ptime)  + str(secretkey) 
+        dictstr = byteify(msgdic)
+        data = str(dictstr)  + str(ptime)  + str(secretkey) 
+        # data = json.dumps(msgdic)  + str(ptime)  + str(secretkey)
+        # print(type(data))
+        # print(data)
 
         sgin = hashlib.sha256(data.encode()).hexdigest().upper()
         return sgin

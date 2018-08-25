@@ -24,9 +24,13 @@ def main():
     # pad.refresh( 0,0, 5,5, 20,75)
     pad.refresh()
 
+def test1():
+    a= '{"aaaaa"}{"ddddd"}'
+    ds = a.split('}{')
+    print(ds)
 
 #测试
 if __name__ == '__main__':
-    main()
+    test1()
     
     

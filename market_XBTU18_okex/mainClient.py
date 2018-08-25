@@ -80,94 +80,32 @@ class Servers(socketserver.StreamRequestHandler):
             try:  
                 data = self.request.recv(4096)
             except EOFError:  
-                print('接收客户端错误，客户端已断开连接,错误码:')
+                print('接收客户端错误，客户端已断开连接,错误码:'.encode('utf-8'))
                 print(EOFError )
                 break
             except:  
-                print('接收客户端错误，客户端已断开连接')
+                print('接收客户端错误，客户端已断开连接'.encode('utf-8'))
                 break
             if not data: 
                 break
             data = data.decode()
             
-            if data == 'openbo':
-                priceOBBuySub = tradetool.okexDatas[0][0] - tradetool.bitmexDatas[0][0] + 10
-                tradetool.openBO(subpurce = priceOBBuySub)
-            elif data == 'openob':
-                priceOBSellSub = tradetool.okexDatas[1][0] - tradetool.bitmexDatas[1][0] - 10
-                tradetool.openOB(subpurce = priceOBSellSub)
-            elif data == 'closebo':
-                priceOBSellSub = tradetool.okexDatas[1][0] - tradetool.bitmexDatas[1][0] - 10
-                tradetool.closeBO(subpurce = priceOBSellSub)
-            elif data == 'closeob':
-                priceOBBuySub = tradetool.okexDatas[0][0] - tradetool.bitmexDatas[0][0] + 10
-                tradetool.closeOB(subpurce = priceOBBuySub)
-            elif data == 'okexol':
-                msg = {'type':'ol','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':'sssss'}
-                tradetool.sendMsgToOkexTrade('ol', msg)
-            elif data == 'okexos':
-                msg = {'type':'os','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':'sssss'}
-                tradetool.sendMsgToOkexTrade('os', msg)
-            elif data == 'okexcl':
-                msg = {'type':'cl','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':'sssss'}
-                tradetool.sendMsgToOkexTrade('cl', msg)
-            elif data == 'okexcs':
-                msg = {'type':'cs','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':'sssss'}
-                tradetool.sendMsgToOkexTrade('cs', msg)
-            elif data == 'bitmexol':
-                CIDtmp = 'sssss' + str(time.time())
-                msg = {'type':'ol','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':CIDtmp}
-                tradetool.sendMsgToBitmexTrade('ol', msg)
-            elif data == 'bitmexos':
-                CIDtmp = 'sssss' + str(time.time())
-                msg = {'type':'os','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':CIDtmp}
-                tradetool.sendMsgToBitmexTrade('os', msg)
-            elif data == 'bitmexcl':
-                CIDtmp = 'sssss' + str(time.time())
-                msg = {'type':'cl','amount':tradetool.baseAmount,'price':20000.0,'islimit':1,'cid':CIDtmp}
-                tradetool.sendMsgToBitmexTrade('cl', msg)
-            elif data == 'bitmexcs':
-                CIDtmp = 'sssss' + str(time.time())
-                msg = {'type':'cs','amount':tradetool.baseAmount,'price':1000.0,'islimit':1,'cid':CIDtmp}
-                tradetool.sendMsgToBitmexTrade('cs', msg)
-            elif data == 'getalloride':
-                tradetool.getAllTrade()
-            elif data == 'cancelokex' or data == 'cokex':
-                tradetool.cancelAllTrade('okex')
-            elif data == 'cancelbitmex' or data == 'cbitmex':
-                tradetool.cancelAllTrade('bitmex')
-            elif data == 'getBitmexFunding':
-                tradetool.getBitmexFunding()
-            elif data == 'account':
-                tradetool.getAccount()
-            elif data == 'opentest' or data == 'ot':
-                tradetool.setTradeTest(True)
-            elif data == 'closetest' or data == 'ct':
-                tradetool.setTradeTest(False)
-            elif data == 'openlog' or data == 'olog':
-                tradetool.setLogShow(True)
-            elif data == 'closelog' or data == 'clog':
-                tradetool.setLogShow(False)
-            elif data == 'clear':
-                tradetool.clearCache()
-            elif data == 'print':
-                tradetool.printDatas()
-            elif data == 'start':
-                tradetool.startDaly = 0
-            elif data == 'stop':
-                tradetool.startDaly = -1
-            elif data == 't':
-                print(tradetool.okexDatas[1][0])
+            if data[:3] == 'key':
+                #key,{"data":"asdkflsadjfladskfj","time":123456789,"sign":18273980s9fsdfasdjfi328349}
+                datdic = json.loads(data[4:])
+                if signTool.isClientSignOK(datdic,apikeytool.apikeydic['clientkey']):
+                    tradetool.setClientSocket(self.request)
+                    self.request.send('ok'.encode())
+                else:
+                    self.request.close()
+            elif self.request == tradetool.clientSoket:
+                tradetool.runClientCMD(data)
             else:
                 print('cmd erro.....')
-
-            # print('---------okexTradeMsgs----------')
-            # print(tradetool.okexTradeMsgs)
-            # print('---------bosubs----------')
-            # print(tradetool.bosubs)
-            # print('---------obsubs----------')
-            # print(tradetool.obsubs)
-            self.request.send('ok'.encode())
+                print(data)
+                if len(data) > 1:
+                    self.request.close()
+            
 
 def startServerThread():
     server = socketserver.ThreadingTCPServer(addr,Servers,bind_and_activate = False)

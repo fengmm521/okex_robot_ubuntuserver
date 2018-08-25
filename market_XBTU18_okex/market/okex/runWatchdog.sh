@@ -20,11 +20,10 @@ echo $DATE
 
 cd $basepath
 
-# python bitmexDataServer.py
-LOG=`nohup python3 bitmexDataServer.py > dlog.txt 2>&1 & echo $!`
+# python okexDataServer.py
+LOG=`nohup python watchdog.py > wlog.txt 2>&1 & echo $!`
 # LOG="12345"
 echo $LOG
 OUTSTR=$DATE"\n"$LOG
-echo $OUTSTR > dpsid.txt
-
+echo $OUTSTR > wpsid.txt
 
