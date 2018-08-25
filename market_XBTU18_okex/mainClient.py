@@ -104,6 +104,11 @@ class Servers(socketserver.StreamRequestHandler):
                 print('cmd erro.....')
                 print(data)
                 if len(data) > 1:
+                    ipstr = str(self.client_address[0]) + '\n'
+                    f = open('erroIP.txt','a')
+                    f.write(ipstr)
+                    f.close()
+                    time.sleep(30)  #客户端非法时延时30秒返回数据,并记下错误ip
                     self.request.close()
             
 
