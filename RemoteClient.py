@@ -93,7 +93,7 @@ class RemoteClient(object):
     def initAnalyseServer(self):
         isErro = False
         try:
-            print('connect magner server:','flkf.hockshop.xyz',self.serverport)
+            print('connect magner server:','serverAddr',self.serverport)
             self.mSocket = socket.socket()  # instantiate
             self.mSocket.connect(('flkf.hockshop.xyz', self.serverport))  # connect to the server
             print('magner server connected!')
